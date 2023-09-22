@@ -3,6 +3,7 @@ package exameniilab;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import javax.swing.JOptionPane;
 
@@ -15,7 +16,7 @@ public class PSNUsers {
 
     public PSNUsers() throws IOException {
         try {
-            RAF = new RandomAccessFile("psn", "rw");
+            RAF = new RandomAccessFile("psn.txt", "rw");
             this.userPositions = new HashTable();
             reloadHashTable();
         } catch (IOException e) {
@@ -24,7 +25,6 @@ public class PSNUsers {
     }
 
 private void reloadHashTable() {
-
         size = 0;
         try {
             RAF.seek(0);
@@ -47,7 +47,7 @@ private void reloadHashTable() {
             System.out.println("[reload] Size: " + userPositions.size);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("error");
         }
 }
     
@@ -68,19 +68,30 @@ private void reloadHashTable() {
     }
 
 
-    /*
-         Agrega un nuevo registro al archivo, al agregarlo también se le agrega un elemento a la HashTable con los datos del usuario nuevo. Los datos de un usuario (usar dicho orden como formato) son:
-                Username que viene de parámetro y que sé válida que sea ÚNICO.
-                Por default tiene el acumulador de puntos por trofeos en 0.
-                Por default tiene el contador de trofeos en 0.
-                Por default el registro está activado. Si un registro tiene el dato activado en false se CONSIDERA BORRADO
-     */
-
     //Buscar un usuario, si se encuentra, se escribe en disco como no activo y además se borra su registro en la HashTable
     public void deactivateUser(String username) {
-        userPositions.remove(username);
-    }
+        RAF.seek(0);
+        while (RAF.getFilePointer() < RAF.length()) {
+            long pos = RAF.getFilePointer(); // Guarda la posición actual
+            String user = RAF.readUTF();
 
+            if (user.equals(username)) {
+                RAF.seek(pos); 
+                RAF.readUTF(); 
+                RAF.writeBoolean(false); 
+                JOptionPane.showMessageDialog(null, "Usuario desactivado");           
+                System.out.println("Usuario desactivado");
+                return; 
+            } else {
+                RAF.readBoolean();
+                RAF.readInt(); 
+                RAF.readInt(); 
+            }
+        }
+    JOptionPane.showMessageDialog(null, "No existe");
+    System.out.println("El usuario no existe");
+    }
+    
     /*
     addTrophieTo(String username, String trophyGame, String trophyName, Trophy type). Busca un usuario con ese username, si se encuentra se le adiciona un trofeo. Los trofeos se guardan en un archivo llamado psn. El formato que se guarda por trofeo es:
             Código del User que se ganó el trofeo.
@@ -90,41 +101,28 @@ private void reloadHashTable() {
             Fecha cuando se lo gano. 15%
             También recordar, aumentar el contador de trofeos y acumulador de puntos del usuario.
      */
-    public void addTrophieTo(String username, String trophyGame, String trophyName, Trophy trophyType) throws IOException {
-        long pos = userPositions.search(username);
-        if (pos != -1) {
-            // Obtener la posición del usuario en el archivo
-            RAF.seek(pos);
+   
+      public void addTrophyTo(String username, String game, String nombretrofeo,  String Description) throws IOException {
+        trofeos.seek(trofeos.length());
 
-            // Leer los datos del usuario
-            int userCode = RAF.readInt();
-            boolean isActive = RAF.readBoolean();
-            String currentUsername = RAF.readUTF();
-            int trophyPoints = RAF.readInt();
-            int trophyCount = RAF.readInt();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-            String currentDate = sdf.format(new Date());
-            try (RandomAccessFile archivoTrofeo = new RandomAccessFile("psn.dat", "rw")) {
-                archivoTrofeo.seek(archivoTrofeo.length());
-                archivoTrofeo.writeInt(userCode);
-                archivoTrofeo.writeUTF(trophyType.name()); // Guardar el nombre del enum
-                archivoTrofeo.writeUTF(trophyGame);
-                archivoTrofeo.writeUTF(trophyName);
-                archivoTrofeo.writeUTF(currentDate);
-                JOptionPane.showMessageDialog(null, "Se agregó el trofeo para " + username + " correctamente.");
+        Calendar calendar = Calendar.getInstance();
+        int año = calendar.get(Calendar.YEAR);
+        int mes = calendar.get(Calendar.MONTH) + 1;
+        int dia = calendar.get(Calendar.DAY_OF_MONTH);
+        String fecha = dia + "/" + mes + "/" + año;
 
-                RAF.seek(pos);
-                RAF.writeInt(userCode);
-                RAF.writeBoolean(isActive);
-                RAF.writeUTF(currentUsername);
-                RAF.writeInt(trophyCount + 1);
-                RAF.writeInt(trophyPoints + 1);
-            }
+        String info = "Juego: " + game + " Tipo: " + nombretrofeo + " Fecha:" + fecha + " Descripcion: " + Description;
+
+        if (userPositions.search(username) != -1) {
+            trofeos.writeUTF(username);
+            trofeos.writeUTF(info);
+            JOptionPane.showMessageDialog(null, "Trofeo Agregado Exitosamente!");
         } else {
-            JOptionPane.showMessageDialog(null, "Usuario no encontrado.");
+            JOptionPane.showMessageDialog(null, "Error: user no encontrado");
         }
-    }
 
+    }
+    
     public void playerInfo(String username) throws IOException {
         long pos = userPositions.search(username);
         if (pos != -1) {
