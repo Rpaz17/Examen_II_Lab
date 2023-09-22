@@ -2,8 +2,8 @@ package exameniilab;
 
 public class Entry {
 
-  private String username;
-    private long position;
+  public String username;
+    public long position;
     private Entry next;
 
     public Entry(String username, long position) {
