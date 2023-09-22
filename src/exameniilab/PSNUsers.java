@@ -45,7 +45,6 @@ private void reloadHashTable() {
                 size++;
             }
             System.out.println("[reload] Size: " + userPositions.size);
-
         } catch (Exception e) {
             System.out.println("error");
         }
@@ -69,7 +68,7 @@ private void reloadHashTable() {
 
 
     //Buscar un usuario, si se encuentra, se escribe en disco como no activo y además se borra su registro en la HashTable
-    public void deactivateUser(String username) {
+    public void deactivateUser(String username) throws IOException {
         RAF.seek(0);
         while (RAF.getFilePointer() < RAF.length()) {
             long pos = RAF.getFilePointer(); // Guarda la posición actual
@@ -102,26 +101,52 @@ private void reloadHashTable() {
             También recordar, aumentar el contador de trofeos y acumulador de puntos del usuario.
      */
    
-      public void addTrophyTo(String username, String game, String nombretrofeo,  String Description) throws IOException {
-        trofeos.seek(trofeos.length());
+    public void addTrophieTo(String username, String game, String nombretrofeo, Trophy type) throws IOException {
+    long userPos = userPositions.search(username);
 
-        Calendar calendar = Calendar.getInstance();
-        int año = calendar.get(Calendar.YEAR);
-        int mes = calendar.get(Calendar.MONTH) + 1;
-        int dia = calendar.get(Calendar.DAY_OF_MONTH);
-        String fecha = dia + "/" + mes + "/" + año;
+    if (userPos != -1) {
+        long currentPosition = RAF.getFilePointer();
 
-        String info = "Juego: " + game + " Tipo: " + nombretrofeo + " Fecha:" + fecha + " Descripcion: " + Description;
+        RAF.seek(userPos);
 
-        if (userPositions.search(username) != -1) {
-            trofeos.writeUTF(username);
-            trofeos.writeUTF(info);
+        String storedUsername = RAF.readUTF();
+        boolean isActive = RAF.readBoolean();
+
+        if (isActive) {
+            int trophyCount = RAF.readInt();
+            int points = RAF.readInt();
+
+            
+            int trophyPoints = type.points;
+
+            trophyCount++;
+            points += trophyPoints;
+
+            RAF.seek(userPos);
+            RAF.writeUTF(storedUsername);
+            RAF.writeBoolean(isActive);
+            RAF.writeInt(trophyCount);
+            RAF.writeInt(points);
+
+            
+            RAF.writeUTF(nombretrofeo);
+            RAF.writeUTF(game);
+            RAF.writeUTF(type.name());
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            String fecha = sdf.format(new Date());
+            RAF.writeUTF(fecha);
+
+            RAF.seek(currentPosition);
+
             JOptionPane.showMessageDialog(null, "Trofeo Agregado Exitosamente!");
         } else {
-            JOptionPane.showMessageDialog(null, "Error: user no encontrado");
+            JOptionPane.showMessageDialog(null, "El usuario está desactivado.");
         }
-
+    } else {
+        JOptionPane.showMessageDialog(null, "El usuario no existe.");
     }
+}
+
     
     public void playerInfo(String username) throws IOException {
         long pos = userPositions.search(username);
