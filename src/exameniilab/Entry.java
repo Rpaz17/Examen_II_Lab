@@ -2,9 +2,9 @@ package exameniilab;
 
 public class Entry {
 
-  public String username;
+    public String username;
     public long position;
-    private Entry next;
+    public Entry next;
 
     public Entry(String username, long position) {
         this.username = username;
@@ -24,7 +24,7 @@ public class Entry {
     public Entry getNext() {
         return next;
     }
-    
+
     // Setters de los atributos
     public void setUsername(String username) {
         this.username = username;
@@ -37,5 +37,5 @@ public class Entry {
     public void setNext(Entry next) {
         this.next = next;
     }
-    
+
 }
